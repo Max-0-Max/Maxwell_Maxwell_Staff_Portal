@@ -826,14 +826,19 @@ END maxwell_score_pkg;
 create or replace PACKAGE BODY maxwell_student_pkg AS
 
   -- Hash a password using SHA-256 and return uppercase hex string
-  FUNCTION hash_password(p_password IN VARCHAR2) RETURN VARCHAR2 IS
-    l_hash RAW(32);
-    l_raw  RAW(2000);
-  BEGIN
-    l_raw := UTL_I18N.STRING_TO_RAW(p_password, 'AL32UTF8');
-    l_hash := DBMS_CRYPTO.HASH(l_raw, DBMS_CRYPTO.HASH_SH256);
-    RETURN UPPER(RAWTOHEX(l_hash));  -- RETURN uppercase hex hash
-  END hash_password;
+  function hash_password (
+   p_password varchar2
+) return varchar2 is
+   l_input varchar2(300);
+   l_hash varchar2(4000);
+begin
+   l_input := LOWER(TRIM(p_password));
+   l_hash := APEX_UTIL.GET_HASH(
+               APEX_T_VARCHAR2(l_input),
+               FALSE
+            );
+   return l_hash;
+end hash_password;
 
   -- Generate matric number automatically for a department
   FUNCTION generate_matric_no(p_department_id IN NUMBER) RETURN VARCHAR2 IS
@@ -884,7 +889,7 @@ create or replace PACKAGE BODY maxwell_student_pkg AS
     INSERT INTO maxwell_students (
       full_name, matric_no, department_id, password_hash
     ) VALUES (
-      UPPER(p_full_name), UPPER(v_matric_no), p_department_id, UPPER(p_password_hash)
+      UPPER(p_full_name), UPPER(v_matric_no), p_department_id, p_password_hash
     );
   END add_student;
 
